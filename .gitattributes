@@ -1,0 +1,2 @@
+# The README.md is programmatically generated with `cargo readme`.
+README.md -diff -merge
