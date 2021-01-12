@@ -51,7 +51,18 @@
 #![deny(missing_docs)]
 
 mod lazy_atomic_cell;
-mod pthread_mutex;
+
+cfg_if::cfg_if! {
+    if #[cfg(unix)] {
+        mod pthread_mutex;
+        use pthread_mutex::PthreadMutex as Mutex;
+    } else if #[cfg(windows)] {
+        mod windows_mutex;
+        use windows_mutex::WindowsMutex as Mutex;
+    } else {
+        compile_error!("no mutex implementation for this platform");
+    }
+}
 
 // This is only public because we can't use type parameters in `const fn` yet,
 // so we can't implement `const fn ShufflingAllocator::new`. Don't use this!
@@ -59,7 +70,6 @@ mod pthread_mutex;
 pub use lazy_atomic_cell::LazyAtomicCell;
 
 use mem::MaybeUninit;
-use pthread_mutex::PthreadMutex;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::{
     alloc::{handle_alloc_error, GlobalAlloc, Layout},
@@ -122,6 +132,8 @@ where
         }
     }
 
+    /// Get the layout for this size class, aka the layout for elements within
+    /// this shuffing array.
     fn elem_layout(&self) -> Layout {
         unsafe {
             debug_assert!(
@@ -334,7 +346,7 @@ pub struct State<A>
 where
     A: 'static + GlobalAlloc,
 {
-    rng: PthreadMutex<A, StdRng>,
+    rng: Mutex<A, StdRng>,
     size_classes: LazyAtomicCell<A, SizeClasses<A>>,
 }
 
@@ -377,7 +389,7 @@ where
     #[inline]
     fn state(&self) -> &State<A> {
         self.state.get_or_create(|| State {
-            rng: PthreadMutex::new(&self.inner, StdRng::from_entropy()),
+            rng: Mutex::new(&self.inner, StdRng::from_entropy()),
             size_classes: LazyAtomicCell::new(self.inner),
         })
     }

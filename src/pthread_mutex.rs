@@ -1,3 +1,4 @@
+use std::cell::UnsafeCell;
 use std::ops::{Deref, DerefMut};
 use std::{
     alloc::{handle_alloc_error, GlobalAlloc, Layout},
@@ -10,7 +11,7 @@ where
     A: 'static + GlobalAlloc,
 {
     inner: *mut libc::pthread_mutex_t,
-    value: T,
+    value: UnsafeCell<T>,
     allocator: &'static A,
 }
 
@@ -65,7 +66,7 @@ where
 
         PthreadMutex {
             inner,
-            value,
+            value: UnsafeCell::new(value),
             allocator,
         }
     }
@@ -101,7 +102,7 @@ where
     type Target = T;
 
     fn deref(&self) -> &T {
-        &self.mutex.value
+        unsafe { &*self.mutex.value.get() }
     }
 }
 
@@ -110,7 +111,6 @@ where
     A: 'static + GlobalAlloc,
 {
     fn deref_mut(&mut self) -> &mut T {
-        let ptr = &self.mutex.value as *const T as *mut T;
-        unsafe { &mut *ptr }
+        unsafe { &mut *self.mutex.value.get() }
     }
 }
