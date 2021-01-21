@@ -1,7 +1,7 @@
 //! A shuffling allocator.
 //!
-//! This crate provides the `ShufflingAllocator` type, which Wraps an existing
-//! allocator and shuffles the order of heap allocations it yeilds, effectively
+//! This crate provides the `ShufflingAllocator` type, which wraps an existing
+//! allocator and shuffles the order of heap allocations it yields, effectively
 //! randomizing the placement of heap allocations.
 //!
 //! Randomizing the locations of heap allocations is useful for testing,
