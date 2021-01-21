@@ -397,7 +397,7 @@ where
     #[inline]
     fn random_index(&self) -> usize {
         let mut rng = self.state().rng.lock();
-        rng.gen_range(0, SHUFFLING_ARRAY_SIZE)
+        rng.gen_range(0..SHUFFLING_ARRAY_SIZE)
     }
 
     #[inline]
